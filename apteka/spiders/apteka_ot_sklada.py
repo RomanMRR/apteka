@@ -7,16 +7,22 @@ from apteka.items import AptekaItem
 
 URL_FOR_API = 'https://apteka-ot-sklada.ru/api/catalog/{id}'
 MAIN_URL = 'https://apteka-ot-sklada.ru{product_url}'
+CITY = 92  # Идентификатор города Томск
 
 
 class AptekaOtSkladaSpider(Spider):
     name = 'apteka_ot_sklada'
-    start_urls = ['https://apteka-ot-sklada.ru/catalog/sredstva-gigieny/uhod-za-polostyu-rta/zubnye-niti_-ershiki/',
-                  'https://apteka-ot-sklada.ru/catalog/sredstva-gigieny/uhod-za-polostyu-rta/opolaskivatel-dlya-rta',
-                  'https://apteka-ot-sklada.ru/catalog/medikamenty-i-bady/obezbolivayushchie-sredstva/obezbolivayushchee-naruzhnoe']
+    start_urls = [
+        'https://apteka-ot-sklada.ru/catalog/sredstva-gigieny/uhod-za-polostyu-rta/zubnye-niti_-ershiki/',
+        'https://apteka-ot-sklada.ru/catalog/sredstva-gigieny/uhod-za-polostyu-rta/opolaskivatel-dlya-rta',
+        'https://apteka-ot-sklada.ru/catalog/medikamenty-i-bady/obezbolivayushchie-sredstva/obezbolivayushchee-naruzhnoe'
+    ]
 
     def start_requests(self):
-        data = {"id": 92}
+        """
+        Делаем первый запрос на получения информации о городе Томск, чтобы последующие запросы были для этого города
+        """
+        data = {"id": CITY}
         yield JsonRequest(
             url='https://apteka-ot-sklada.ru/api/user/city/requestById',
             callback=self.parse_region,
@@ -26,6 +32,9 @@ class AptekaOtSkladaSpider(Spider):
         )
 
     def parse_region(self, response, **kwargs):
+        """
+        Собираем информацию о товарах в заданных категориях
+        """
         for url in self.start_urls:
             yield Request(
                 url=url,
@@ -33,28 +42,34 @@ class AptekaOtSkladaSpider(Spider):
             )
 
     def parse(self, response, **kwargs):
+        """
+        Собираем информацию о товарах в категории
+        """
         products = response.xpath('//div[@itemprop="itemListElement"]')
         for product in products:
             url = product.xpath('.//a[@class="goods-card__link"]/@href').get()
-            id = url.split('_')[-1]
+            product_id = url.split('_')[-1]
             yield Request(
-                url=URL_FOR_API.format(id=id),
+                url=URL_FOR_API.format(id=product_id),
                 callback=self.parse_product,
                 cb_kwargs={"url": url,
-                           "id": id}
+                           "good_id": product_id}
             )
         next_page = response.xpath('//a[contains(@class, "ui-pagination__link_direction")]/@href')[-1].get()
 
         if next_page is not None:
             url = MAIN_URL.format(product_url=next_page)
-            yield Request(url, callback=self.parse, cookies={"city": '92'})
+            yield Request(url, callback=self.parse, cookies={"city": f'{CITY}'})
 
     def parse_product(self, response, **kwargs):
+        """
+        Собираем информацию о товаре
+        """
         item = AptekaItem()
         item["timestamp"] = time.time()
         item["url"] = MAIN_URL.format(product_url=kwargs.get("url"))
 
-        item["RPC"] = kwargs.get("id")
+        item["RPC"] = kwargs.get("product_id")
         try:
             json_data = response.json()
         except JSONDecodeError:
@@ -89,7 +104,8 @@ class AptekaOtSkladaSpider(Spider):
             "set_images": [],  # {list of str} Список больших изображений товара
         }
         if json_data.get("images"):
-            item["assets"]["main_image"] = json_data.get("images").pop()
+            item["assets"]["main_image"] = json_data.get("images").pop(
+                0)  # Первое изображение в списке является главным
         item["assets"]["set_images"] = json_data.get("images")
         item["metadata"] = {
             "__description": "",  # {str} Описание товар
