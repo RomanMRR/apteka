@@ -74,7 +74,7 @@ class AptekaOtSkladaSpider(Spider):
         try:
             json_data = response.json()
         except JSONDecodeError:
-            self.logger.warning("Failed to get product information")
+            self.logger.warning(f"No json for the product {item['url']}")
             yield item
             return
 
