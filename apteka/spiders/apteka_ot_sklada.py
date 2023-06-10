@@ -1,7 +1,8 @@
 import time
+from json import JSONDecodeError
+
 from scrapy import Spider, Request
 from scrapy.http import JsonRequest
-from json import JSONDecodeError
 
 from apteka.items import AptekaItem
 

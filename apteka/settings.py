@@ -1,11 +1,4 @@
-# Scrapy settings for apteka project
-#
-# For simplicity, this file contains only settings considered important or
-# commonly used. You can find more settings consulting the documentation:
-#
-#     https://docs.scrapy.org/en/latest/topics/settings.html
-#     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
-#     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
+from apteka.items import AptekaItem
 
 BOT_NAME = 'apteka'
 
@@ -19,9 +12,19 @@ NEWSPIDER_MODULE = 'apteka.spiders'
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = False
 
-FEED_URI = 'apteka_items.json'
-FEED_FORMAT = 'json'
-FEED_EXPORT_ENCODING = 'utf-8'
+FEEDS = {
+    'data/%(name)s.json': {
+        'format': 'json',
+        'encoding': 'utf8',
+        'store_empty': False,
+        'item_classes': [AptekaItem, 'apteka.items.AptekaItem'],
+        'indent': 4,
+        'overwrite': True,
+        'item_export_kwargs': {
+            'export_empty_fields': True,
+        },
+    }
+}
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 #CONCURRENT_REQUESTS = 32

@@ -34,7 +34,7 @@ pip install -r requirements.txt
 scrapy crawl apteka_ot_sklada
 ```
 
-Полученные данные будут сохранены в файле json `apteka/apteka_items.json`
+Полученные данные будут сохранены в файле json `apteka/data/apteka_ot_sklada.json`
 
 
 
