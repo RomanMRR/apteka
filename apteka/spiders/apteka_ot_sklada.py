@@ -54,7 +54,7 @@ class AptekaOtSkladaSpider(Spider):
                 url=URL_FOR_API.format(id=product_id),
                 callback=self.parse_product,
                 cb_kwargs={"url": url,
-                           "good_id": product_id}
+                           "product_id": product_id}
             )
         next_page = response.xpath('//a[contains(@class, "ui-pagination__link_direction")]/@href')[-1].get()
 
