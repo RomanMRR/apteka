@@ -78,8 +78,14 @@ class AptekaOtSkladaSpider(Spider):
             return
 
         item["title"] = json_data.get("name")
-        item["marketing_tags"] = json_data.get("stickers")
-        item["section"] = json_data.get("category")
+        item["marketing_tags"] = [marketing_tag.get("name") for marketing_tag in
+                                  json_data.get("stickers", [])]
+
+        item["section"] = []
+        if json_data.get("category", {}).get("parents"):
+            item["section"] = [category_name.get("name") for category_name in
+                               json_data.get("category", {}).get("parents")]
+        item["section"].append(json_data.get("category", {}).get("name"))
 
         item["price_data"] = {
             "current": 0.,
@@ -99,6 +105,7 @@ class AptekaOtSkladaSpider(Spider):
         }
         item["stock"]["in_stock"] = json_data.get("inStock")
         item["stock"]["count"] = json_data.get("availability")  # Количество магазинов, где доступен товар
+
         item["assets"] = {
             "main_image": "",  # {str} Ссылка на основное изображение товара
             "set_images": [],  # {list of str} Список больших изображений товара
@@ -107,6 +114,7 @@ class AptekaOtSkladaSpider(Spider):
             item["assets"]["main_image"] = json_data.get("images").pop(
                 0)  # Первое изображение в списке является главным
         item["assets"]["set_images"] = json_data.get("images")
+
         item["metadata"] = {
             "__description": "",  # {str} Описание товар
             "СТРАНА ПРОИЗВОДИТЕЛЬ": ""
